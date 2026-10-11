@@ -358,6 +358,7 @@ int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destin
         insertAfter(tail, current, newFlight);
     }
     return SUCCESS;
+
 }
 //
 // FUNCTION    : getFlights
@@ -408,7 +409,6 @@ int getFlights(FlightNode** fareHead, FlightNode** fareTail, FlightNode** destin
     return status;
 }
 
-
 //
 // FUNCTION    : printList
 // DESCRIPTION :
@@ -425,5 +425,71 @@ void printList(FlightNode* head) {
         printf("%-15s%-10s%-.2f\n", current->Flight.Destination, current->Flight.Date, current->Flight.Fare);
         current = current->NextFlight;
     }
+}
+
+//
+// FUNCTION    : findFlight
+// DESCRIPTION :
+//   This function iterates through the list and checks if both the
+//   destination and the date of a node are equal to the given ones
+//   (case-sensitive).
+// PARAMETERS  :
+//   FlightNode* head  : head of list
+//   char* destination : pointer to null-terminated string containing destination
+//   char* date        : pointer to null-terminated string containing date
+// RETURNS     :
+//   FlightNode* : pointer to the node containing the flight, or NULL if the
+//                 flight is not found
+//
+FlightNode* findFlight(FlightNode* head, char* destination, char* date) {
+    FlightNode* current = head;
+    while (current != NULL) {
+        if (strcmp(current->Flight.Destination, destination) == 0 &&
+            strcmp(current->Flight.Date, date) == 0) {
+            return current;
+        }
+        current = current->NextFlight;
+    }
+    return NULL;
+}
+
+
+//
+// FUNCTION    : deleteNode
+// DESCRIPTION :
+//   This function deletes a node from the list. It relinks the pointers
+//   around the node first (and moves the head or the tail if the node is one
+//   of them) and then frees the memory of the node.
+// PARAMETERS  :
+//   FlightNode* node  : node to delete
+//   FlightNode** head : pointer to head of list
+//   FlightNode** tail : pointer to tail of list
+// RETURNS     :
+//   none
+//
+void deleteNode(FlightNode* node, FlightNode** head, FlightNode** tail) {
+    if (node == NULL) {
+        return;
+    }
+
+    if (node->PreviousFlight != NULL) {
+        node->PreviousFlight->NextFlight = node->NextFlight;
+    }
+    else {
+        //the node is the head
+        *head = node->NextFlight;
+    }
+
+    if (node->NextFlight != NULL) {
+        node->NextFlight->PreviousFlight = node->PreviousFlight;
+    }
+    else {
+        //the node is the tail
+        *tail = node->PreviousFlight;
+    }
+
+    free(node->Flight.Destination);
+    free(node->Flight.Date);
+    free(node);
 }
 
