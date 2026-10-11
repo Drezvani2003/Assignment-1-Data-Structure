@@ -83,4 +83,111 @@ int main(void)
 
 	return status;
 }
+//
+// FUNCTION    : getString
+// DESCRIPTION :
+//   This function reads one line from stdin and removes the newline. If the
+//   user types more than what fits in buf, the extra characters are dropped
+//   so that buf can never overflow.
+// PARAMETERS  :
+//   char* buf : where the string is stored
+//   int size  : size of buf including the null terminator
+// RETURNS     :
+//   int : SUCCESS if a line was read, FAILURE if there is no more input
+//
+int getString(char* buf, int size) {
+    char temp[BUFFER_SIZE] = "";
+
+    buf[0] = '\0';
+
+    if (fgets(temp, sizeof(temp), stdin) == NULL) {
+        return FAILURE;
+    }
+
+    //if there is no newline the line was too long, so skip the rest of it
+    if (strchr(temp, '\n') == NULL) {
+        int extra = getchar();
+        while (extra != '\n' && extra != EOF) {
+            extra = getchar();
+        }
+    }
+
+    temp[strcspn(temp, "\r\n")] = '\0';
+    strncpy(buf, temp, (size_t)size - 1);
+    buf[size - 1] = '\0';
+
+    return SUCCESS;
+}
+
+
+//
+// FUNCTION    : getValidString
+// DESCRIPTION :
+//   This function reads a destination or a date from stdin. It keeps asking
+//   until the string is not empty and is short enough to fit in buf.
+// PARAMETERS  :
+//   char* buf : where the string is stored
+//   int size  : size of buf including the null terminator
+// RETURNS     :
+//   int : SUCCESS if a string was read, FAILURE if there is no more input
+//
+int getValidString(char* buf, int size) {
+    char temp[BUFFER_SIZE] = "";
+    int valid = 0;
+
+    while (valid == 0) {
+        if (getString(temp, sizeof(temp)) == FAILURE) {
+            return FAILURE;
+        }
+
+        if (strlen(temp) == 0 || strlen(temp) >= (size_t)size) {
+            printf("Invalid input, it must be 1 to %d characters. Enter it again: ", size - 1);
+        }
+        else {
+            valid = 1;
+        }
+    }
+    strcpy(buf, temp);
+
+    return SUCCESS;
+}
+
+
+//
+// FUNCTION    : getFare
+// DESCRIPTION :
+//   This function reads a fare from stdin as a floating-point number. It
+//   keeps asking until the user enters a number that is not negative with
+//   nothing else after it. A $ in front of it is allowed.
+// PARAMETERS  :
+//   float* fare : where the fare is stored
+// RETURNS     :
+//   int : SUCCESS if a fare was read, FAILURE if there is no more input
+//
+int getFare(float* fare) {
+    char buf[BUFFER_SIZE] = "";
+    char extra = 0;
+    int valid = 0;
+
+    while (valid == 0) {
+        if (getString(buf, sizeof(buf)) == FAILURE) {
+            return FAILURE;
+        }
+
+        //skip the $ if the user typed it
+        char* number = buf;
+        if (*number == '$') {
+            number++;
+        }
+
+        //it has to start with a digit and have nothing left after the number
+        if (isdigit((unsigned char)*number) && sscanf(number, "%f %c", fare, &extra) == 1) {
+            valid = 1;
+        }
+        else {
+            printf("Invalid fare, it must be a number like 250.75. Enter the fare again: ");
+        }
+    }
+    return SUCCESS;
+}
 
