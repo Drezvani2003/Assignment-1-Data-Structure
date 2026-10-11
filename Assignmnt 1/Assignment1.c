@@ -359,3 +359,71 @@ int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destin
     }
     return SUCCESS;
 }
+//
+// FUNCTION    : getFlights
+// DESCRIPTION :
+//   This function reads the destination, date and fare of each flight from
+//   stdin (each on a separate line) and adds the flight to both sorted lists.
+//   It stops as soon as the user enters "." as the destination or the date,
+//   and that flight is ignored. Invalid input is asked for again.
+// PARAMETERS  :
+//   FlightNode** fareHead        : pointer to head of the list sorted by fare
+//   FlightNode** fareTail        : pointer to tail of the list sorted by fare
+//   FlightNode** destinationHead : pointer to head of the list sorted by destination
+//   FlightNode** destinationTail : pointer to tail of the list sorted by destination
+// RETURNS     :
+//   int : SUCCESS if the input is done, FAILURE if there is no memory
+//
+int getFlights(FlightNode** fareHead, FlightNode** fareTail, FlightNode** destinationHead, FlightNode** destinationTail) {
+    char destination[DESTINATION_SIZE] = "";
+    char date[DATE_SIZE] = "";
+    float fare = 0;
+    int status = SUCCESS;
+    int done = 0;
+
+    while (done == 0) {
+        printf("Enter the destination (. to stop): ");
+        if (getValidString(destination, sizeof(destination)) == FAILURE || strcmp(destination, STOP_INPUT) == 0) {
+            done = 1;
+        }
+        else {
+            printf("Enter the date as DDMMYYYY (. to stop): ");
+            if (getValidString(date, sizeof(date)) == FAILURE || strcmp(date, STOP_INPUT) == 0) {
+                done = 1;
+            }
+            else {
+                printf("Enter the fare: ");
+                if (getFare(&fare) == FAILURE) {
+                    done = 1;
+                }
+                //add the flight to both lists
+                else if (insertSortedByFare(fareHead, fareTail, destination, date, fare) == FAILURE ||
+                    insertSortedByDestination(destinationHead, destinationTail, destination, date, fare) == FAILURE) {
+                    status = FAILURE;
+                    done = 1;
+                }
+            }
+        }
+    }
+    return status;
+}
+
+
+//
+// FUNCTION    : printList
+// DESCRIPTION :
+//   This function prints the destination, date and fare of every flight
+//   within the linked list, one flight per line.
+// PARAMETERS  :
+//   FlightNode* head : head of list
+// RETURNS     :
+//   none
+//
+void printList(FlightNode* head) {
+    FlightNode* current = head;
+    while (current != NULL) {
+        printf("%-15s%-10s%-.2f\n", current->Flight.Destination, current->Flight.Date, current->Flight.Fare);
+        current = current->NextFlight;
+    }
+}
+
