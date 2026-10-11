@@ -190,4 +190,172 @@ int getFare(float* fare) {
     }
     return SUCCESS;
 }
+//
+// FUNCTION    : createNewNode
+// DESCRIPTION :
+//   This function dynamically allocates the memory for a flight and creates a
+//   new flight NODE. The destination and date are allocated to the exact size
+//   of the strings. It is the calling function's responsibility to set the
+//   PreviousFlight and NextFlight links.
+// PARAMETERS  :
+//   char* destination : destination of the flight
+//   char* date        : date of the flight
+//   float fare        : fare of the flight
+// RETURNS     :
+//   FlightNode* : pointer to the new node, or NULL if there is no memory
+//
+FlightNode* createNewNode(char* destination, char* date, float fare) {
+    FlightNode* newFlight = (FlightNode*)malloc(sizeof(FlightNode));
 
+    if (newFlight == NULL) {
+        printf("No Memory!\n");
+        return NULL;
+    }
+
+    newFlight->Flight.Destination = (char*)malloc(strlen(destination) + 1);
+    newFlight->Flight.Date = (char*)malloc(strlen(date) + 1);
+
+    if (newFlight->Flight.Destination == NULL || newFlight->Flight.Date == NULL) {
+        printf("No Memory!\n");
+        free(newFlight->Flight.Destination);
+        free(newFlight->Flight.Date);
+        free(newFlight);
+        return NULL;
+    }
+
+    strcpy(newFlight->Flight.Destination, destination);
+    strcpy(newFlight->Flight.Date, date);
+    newFlight->Flight.Fare = fare;
+    newFlight->PreviousFlight = NULL;
+    newFlight->NextFlight = NULL;
+    return newFlight;
+}
+
+
+//
+// FUNCTION    : insertNewHead
+// DESCRIPTION :
+//   This function adds a node at the beginning of the list and shifts the
+//   head to it. If the list is empty the node is also the tail.
+// PARAMETERS  :
+//   FlightNode** head     : pointer to head of list
+//   FlightNode** tail     : pointer to tail of list
+//   FlightNode* newFlight : node to add
+// RETURNS     :
+//   none
+//
+void insertNewHead(FlightNode** head, FlightNode** tail, FlightNode* newFlight) {
+    if (*head == NULL) {
+        *tail = newFlight;
+        *head = newFlight;
+    }
+    else {
+        (*head)->PreviousFlight = newFlight;
+        newFlight->NextFlight = *head;
+        *head = newFlight;
+    }
+}
+
+
+//
+// FUNCTION    : insertAfter
+// DESCRIPTION :
+//   This function adds a node right after the current node. If the current
+//   node is the tail, the new node becomes the new tail.
+// PARAMETERS  :
+//   FlightNode** tail     : pointer to tail of list
+//   FlightNode* current   : node that the new node is added after
+//   FlightNode* newFlight : node to add
+// RETURNS     :
+//   none
+//
+void insertAfter(FlightNode** tail, FlightNode* current, FlightNode* newFlight) {
+    newFlight->NextFlight = current->NextFlight;
+    newFlight->PreviousFlight = current;
+
+    if (current->NextFlight != NULL) {
+        current->NextFlight->PreviousFlight = newFlight;
+    }
+    else {
+        *tail = newFlight;
+    }
+    current->NextFlight = newFlight;
+}
+
+
+//
+// FUNCTION    : insertSortedByFare
+// DESCRIPTION :
+//   This function creates a new flight and puts it in its sorted place at the
+//   time of insertion. Sorting is done based on the fare (ascending). If two
+//   flights have the same fare, the new one goes after the older one.
+// PARAMETERS  :
+//   FlightNode** head : pointer to head of list
+//   FlightNode** tail : pointer to tail of list
+//   char* destination : destination of the flight
+//   char* date        : date of the flight
+//   float fare        : fare of the flight
+// RETURNS     :
+//   int : SUCCESS if the flight was added, FAILURE if there is no memory
+//
+int insertSortedByFare(FlightNode** head, FlightNode** tail, char* destination, char* date, float fare) {
+    FlightNode* newFlight = createNewNode(destination, date, fare);
+    if (newFlight == NULL) {
+        return FAILURE;
+    }
+
+    //Check if list is empty or the new fare is smaller than the head
+    if (*head == NULL || fare < (*head)->Flight.Fare) {
+        insertNewHead(head, tail, newFlight);
+    }
+    else {
+        FlightNode* current = *head;
+
+        // ITERATE TO FIND THE LAST ELEMENT THAT IS NOT BIGGER THAN THE NEW FARE
+        while (current->NextFlight != NULL && current->NextFlight->Flight.Fare <= fare) {
+            current = current->NextFlight;
+        }
+        insertAfter(tail, current, newFlight);
+    }
+    return SUCCESS;
+}
+
+
+//
+// FUNCTION    : insertSortedByDestination
+// DESCRIPTION :
+//   This function creates a new flight and puts it in its sorted place at the
+//   time of insertion. Sorting is done based on the destination (ascending).
+//   If two flights have the same destination, the new one goes after the
+//   older one.
+// PARAMETERS  :
+//   FlightNode** head : pointer to head of list
+//   FlightNode** tail : pointer to tail of list
+//   char* destination : destination of the flight
+//   char* date        : date of the flight
+//   float fare        : fare of the flight
+// RETURNS     :
+//   int : SUCCESS if the flight was added, FAILURE if there is no memory
+//
+int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destination, char* date, float fare) {
+    FlightNode* newFlight = createNewNode(destination, date, fare);
+    if (newFlight == NULL) {
+        return FAILURE;
+    }
+
+    //Check if list is empty or the new destination comes before the head
+    if (*head == NULL || strcmp(destination, (*head)->Flight.Destination) < 0) {
+        insertNewHead(head, tail, newFlight);
+    }
+    else {
+        FlightNode* current = *head;
+
+        // ITERATE TO FIND THE LAST ELEMENT THAT DOES NOT COME AFTER THE NEW DESTINATION
+        while (current->NextFlight != NULL &&
+            strcmp(current->NextFlight->Flight.Destination, destination) <= 0) {
+            current = current->NextFlight;
+        }
+        insertAfter(tail, current, newFlight);
+    }
+    return SUCCESS;
+}
