@@ -48,6 +48,8 @@ void insertAfter(FlightNode** tail, FlightNode* current, FlightNode* newFlight);
 
 int insertSortedByFare(FlightNode** head, FlightNode** tail, char* destination, char* date, float fare);
 
+int compareDestination(char* first, char* second);
+
 int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destination, char* date, float fare);
 
 int getFlights(FlightNode** fareHead, FlightNode** fareTail, FlightNode** destinationHead, FlightNode** destinationTail);
@@ -300,6 +302,28 @@ int insertSortedByFare(FlightNode** head, FlightNode** tail, char* destination, 
 
 
 //
+// FUNCTION    : compareDestination
+// DESCRIPTION :
+//   This function compares two destinations alphabetically without caring
+//   about capital letters, so "miami" and "Miami" are sorted the same way.
+//   (strcmp puts every capital letter before every small letter.)
+// PARAMETERS  :
+//   char* first  : first destination
+//   char* second : second destination
+// RETURNS     :
+//   int : less than 0 if first comes before second, 0 if they are the same,
+//         more than 0 if first comes after second
+//
+int compareDestination(char* first, char* second) {
+    while (*first != '\0' && tolower((unsigned char)*first) == tolower((unsigned char)*second)) {
+        first++;
+        second++;
+    }
+    return tolower((unsigned char)*first) - tolower((unsigned char)*second);
+}
+
+
+//
 // FUNCTION    : insertSortedByDestination
 // DESCRIPTION :
 //   This function creates a new flight and puts it in its sorted place at the
@@ -322,7 +346,7 @@ int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destin
     }
 
     //Check if list is empty or the new destination comes before the head
-    if (*head == NULL || strcmp(destination, (*head)->Flight.Destination) < 0) {
+    if (*head == NULL || compareDestination(destination, (*head)->Flight.Destination) < 0) {
         InsertNewHead(head, tail, newFlight);
     }
     else {
@@ -330,7 +354,7 @@ int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destin
 
         // ITERATE TO FIND THE LAST ELEMENT THAT DOES NOT COME AFTER THE NEW DESTINATION
         while (current->NextFlight != NULL &&
-            strcmp(current->NextFlight->Flight.Destination, destination) <= 0) {
+            compareDestination(current->NextFlight->Flight.Destination, destination) <= 0) {
             current = current->NextFlight;
         }
         insertAfter(tail, current, newFlight);
@@ -559,7 +583,9 @@ int main(void) {
 
     if (status == 0) {
         //2. Print both lists
+        printf("Flights sorted by fare:\n");
         PrintList(fareHead);
+        printf("Flights sorted by destination:\n");
         PrintList(destinationHead);
 
         //3. Search for one flight and change its fare
@@ -568,7 +594,9 @@ int main(void) {
 
     if (status == 0) {
         //4. Print both lists again
+        printf("Flights sorted by fare:\n");
         PrintList(fareHead);
+        printf("Flights sorted by destination:\n");
         PrintList(destinationHead);
     }
 
