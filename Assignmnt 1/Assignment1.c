@@ -1,3 +1,15 @@
+/*
+* PROJECT       : Assignment 1 - Sorted Doubly-Linked Lists
+* PROGRAMMER    : Danial Rezvanirashidabad
+* DESCRIPTION   :
+*   This program gets flight information (destination, date and fare) from the
+*   user and stores every flight in two separate sorted doubly linked lists.
+*   One list is sorted by fare and the other one is sorted by destination.
+*   Every flight is put into its proper place at the time of insertion.
+*   After the input is done both lists are printed. Then the user can search
+*   for one flight by destination and date and change its fare. Both lists are
+*   printed again and all of the memory is freed at the end.
+*/
 
 #pragma warning(disable:4996)
 
@@ -6,83 +18,47 @@
 #include <string.h>
 #include <ctype.h>
 
-#define DESTINATION_SIZE 15		//max destination length including the null terminator
-#define DATE_SIZE 9				//max date length (DDMMYYYY) including the null terminator
-#define BUFFER_SIZE 121			//size of the buffer used to read one line from stdin
-#define STOP_INPUT "."			//destination or date that ends the flight input
-#define SUCCESS 0
-#define FAILURE 1
+#define DESTINATION_SIZE 15     //max destination length including the null terminator
+#define DATE_SIZE 9             //max date length (DDMMYYYY) including the null terminator
+#define BUFFER_SIZE 121         //size of the buffer used to read one line from stdin
+#define STOP_INPUT "."          //destination or date that ends the flight input
 
-//Information about one flight. destination and date are dynamically allocated
-typedef struct FlightInfo
-{
-	char* destination;
-	char* date;
-	float fare;
+//Information about one flight. Destination and Date are dynamically allocated
+typedef struct FlightInfo {
+    char* Destination;
+    char* Date;
+    float Fare;
 } FlightInfo;
 
 //One node of the doubly linked list
-typedef struct FlightNode
-{
-	FlightInfo flight;
-	struct FlightNode* previousFlight;
-	struct FlightNode* nextFlight;
+typedef struct FlightNode {
+    FlightInfo Flight;
+    struct FlightNode* PreviousFlight;
+    struct FlightNode* NextFlight;
 } FlightNode;
-
-//Function prototype
 
 int getString(char* buf, int size);
 int getValidString(char* buf, int size);
 int getFare(float* fare);
-FlightNode* createNewNode(char* destination, char* date, float fare);
-void insertNewHead(FlightNode** head, FlightNode** tail, FlightNode* newFlight);
+FlightNode* CreateNewNode(char* destination, char* date, float fare);
+
+void InsertNewHead(FlightNode** head, FlightNode** tail, FlightNode* newFlight);
+
 void insertAfter(FlightNode** tail, FlightNode* current, FlightNode* newFlight);
+
 int insertSortedByFare(FlightNode** head, FlightNode** tail, char* destination, char* date, float fare);
+
 int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destination, char* date, float fare);
+
 int getFlights(FlightNode** fareHead, FlightNode** fareTail, FlightNode** destinationHead, FlightNode** destinationTail);
-void printList(FlightNode* head);
+
+void PrintList(FlightNode* head);
 FlightNode* findFlight(FlightNode* head, char* destination, char* date);
 void deleteNode(FlightNode* node, FlightNode** head, FlightNode** tail);
 int changeFare(FlightNode** fareHead, FlightNode** fareTail, FlightNode* destinationHead);
-void freeList(FlightNode** head, FlightNode** tail);
+void FreeList(FlightNode** head, FlightNode** tail);
 
 
-int main(void)
-{
-	//head and tail of the list sorted by fare, at first the list is empty
-	FlightNode* fareHead = NULL;
-	FlightNode* fareTail = NULL;
-
-	//head and tail of the list sorted by destination, at first the list is empty
-	FlightNode* destinationHead = NULL;
-	FlightNode* destinationTail = NULL;
-
-	//1. Get all the flights from the user and add them to both lists
-	int status = getFlights(&fareHead, &fareTail, &destinationHead, &destinationTail);
-
-	if (status == SUCCESS)
-	{
-		//2. Print both lists
-		printList(fareHead);
-		printList(destinationHead);
-
-		//3. Search for one flight and change its fare
-		status = changeFare(&fareHead, &fareTail, destinationHead);
-	}
-
-	if (status == SUCCESS)
-	{
-		//4. Print both lists again
-		printList(fareHead);
-		printList(destinationHead);
-	}
-
-	//5. Clear out both lists
-	freeList(&fareHead, &fareTail);
-	freeList(&destinationHead, &destinationTail);
-
-	return status;
-}
 //
 // FUNCTION    : getString
 // DESCRIPTION :
@@ -93,7 +69,7 @@ int main(void)
 //   char* buf : where the string is stored
 //   int size  : size of buf including the null terminator
 // RETURNS     :
-//   int : SUCCESS if a line was read, FAILURE if there is no more input
+//   int : 0 if a line was read, -1 if there is no more input
 //
 int getString(char* buf, int size) {
     char temp[BUFFER_SIZE] = "";
@@ -101,7 +77,7 @@ int getString(char* buf, int size) {
     buf[0] = '\0';
 
     if (fgets(temp, sizeof(temp), stdin) == NULL) {
-        return FAILURE;
+        return -1;
     }
 
     //if there is no newline the line was too long, so skip the rest of it
@@ -116,7 +92,7 @@ int getString(char* buf, int size) {
     strncpy(buf, temp, (size_t)size - 1);
     buf[size - 1] = '\0';
 
-    return SUCCESS;
+    return 0;
 }
 
 
@@ -129,15 +105,15 @@ int getString(char* buf, int size) {
 //   char* buf : where the string is stored
 //   int size  : size of buf including the null terminator
 // RETURNS     :
-//   int : SUCCESS if a string was read, FAILURE if there is no more input
+//   int : 0 if a string was read, -1 if there is no more input
 //
 int getValidString(char* buf, int size) {
     char temp[BUFFER_SIZE] = "";
     int valid = 0;
 
     while (valid == 0) {
-        if (getString(temp, sizeof(temp)) == FAILURE) {
-            return FAILURE;
+        if (getString(temp, sizeof(temp)) == -1) {
+            return -1;
         }
 
         if (strlen(temp) == 0 || strlen(temp) >= (size_t)size) {
@@ -149,7 +125,7 @@ int getValidString(char* buf, int size) {
     }
     strcpy(buf, temp);
 
-    return SUCCESS;
+    return 0;
 }
 
 
@@ -162,7 +138,7 @@ int getValidString(char* buf, int size) {
 // PARAMETERS  :
 //   float* fare : where the fare is stored
 // RETURNS     :
-//   int : SUCCESS if a fare was read, FAILURE if there is no more input
+//   int : 0 if a fare was read, -1 if there is no more input
 //
 int getFare(float* fare) {
     char buf[BUFFER_SIZE] = "";
@@ -170,8 +146,8 @@ int getFare(float* fare) {
     int valid = 0;
 
     while (valid == 0) {
-        if (getString(buf, sizeof(buf)) == FAILURE) {
-            return FAILURE;
+        if (getString(buf, sizeof(buf)) == -1) {
+            return -1;
         }
 
         //skip the $ if the user typed it
@@ -188,10 +164,12 @@ int getFare(float* fare) {
             printf("Invalid fare, it must be a number like 250.75. Enter the fare again: ");
         }
     }
-    return SUCCESS;
+    return 0;
 }
+
+
 //
-// FUNCTION    : createNewNode
+// FUNCTION    : CreateNewNode
 // DESCRIPTION :
 //   This function dynamically allocates the memory for a flight and creates a
 //   new flight NODE. The destination and date are allocated to the exact size
@@ -204,7 +182,7 @@ int getFare(float* fare) {
 // RETURNS     :
 //   FlightNode* : pointer to the new node, or NULL if there is no memory
 //
-FlightNode* createNewNode(char* destination, char* date, float fare) {
+FlightNode* CreateNewNode(char* destination, char* date, float fare) {
     FlightNode* newFlight = (FlightNode*)malloc(sizeof(FlightNode));
 
     if (newFlight == NULL) {
@@ -233,7 +211,7 @@ FlightNode* createNewNode(char* destination, char* date, float fare) {
 
 
 //
-// FUNCTION    : insertNewHead
+// FUNCTION    : InsertNewHead
 // DESCRIPTION :
 //   This function adds a node at the beginning of the list and shifts the
 //   head to it. If the list is empty the node is also the tail.
@@ -244,7 +222,7 @@ FlightNode* createNewNode(char* destination, char* date, float fare) {
 // RETURNS     :
 //   none
 //
-void insertNewHead(FlightNode** head, FlightNode** tail, FlightNode* newFlight) {
+void InsertNewHead(FlightNode** head, FlightNode** tail, FlightNode* newFlight) {
     if (*head == NULL) {
         *tail = newFlight;
         *head = newFlight;
@@ -296,17 +274,17 @@ void insertAfter(FlightNode** tail, FlightNode* current, FlightNode* newFlight) 
 //   char* date        : date of the flight
 //   float fare        : fare of the flight
 // RETURNS     :
-//   int : SUCCESS if the flight was added, FAILURE if there is no memory
+//   int : 0 if the flight was added, -1 if there is no memory
 //
 int insertSortedByFare(FlightNode** head, FlightNode** tail, char* destination, char* date, float fare) {
-    FlightNode* newFlight = createNewNode(destination, date, fare);
+    FlightNode* newFlight = CreateNewNode(destination, date, fare);
     if (newFlight == NULL) {
-        return FAILURE;
+        return -1;
     }
 
     //Check if list is empty or the new fare is smaller than the head
     if (*head == NULL || fare < (*head)->Flight.Fare) {
-        insertNewHead(head, tail, newFlight);
+        InsertNewHead(head, tail, newFlight);
     }
     else {
         FlightNode* current = *head;
@@ -317,7 +295,7 @@ int insertSortedByFare(FlightNode** head, FlightNode** tail, char* destination, 
         }
         insertAfter(tail, current, newFlight);
     }
-    return SUCCESS;
+    return 0;
 }
 
 
@@ -335,17 +313,17 @@ int insertSortedByFare(FlightNode** head, FlightNode** tail, char* destination, 
 //   char* date        : date of the flight
 //   float fare        : fare of the flight
 // RETURNS     :
-//   int : SUCCESS if the flight was added, FAILURE if there is no memory
+//   int : 0 if the flight was added, -1 if there is no memory
 //
 int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destination, char* date, float fare) {
-    FlightNode* newFlight = createNewNode(destination, date, fare);
+    FlightNode* newFlight = CreateNewNode(destination, date, fare);
     if (newFlight == NULL) {
-        return FAILURE;
+        return -1;
     }
 
     //Check if list is empty or the new destination comes before the head
     if (*head == NULL || strcmp(destination, (*head)->Flight.Destination) < 0) {
-        insertNewHead(head, tail, newFlight);
+        InsertNewHead(head, tail, newFlight);
     }
     else {
         FlightNode* current = *head;
@@ -357,9 +335,10 @@ int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destin
         }
         insertAfter(tail, current, newFlight);
     }
-    return SUCCESS;
-
+    return 0;
 }
+
+
 //
 // FUNCTION    : getFlights
 // DESCRIPTION :
@@ -373,34 +352,34 @@ int insertSortedByDestination(FlightNode** head, FlightNode** tail, char* destin
 //   FlightNode** destinationHead : pointer to head of the list sorted by destination
 //   FlightNode** destinationTail : pointer to tail of the list sorted by destination
 // RETURNS     :
-//   int : SUCCESS if the input is done, FAILURE if there is no memory
+//   int : 0 if the input is done, -1 if there is no memory
 //
 int getFlights(FlightNode** fareHead, FlightNode** fareTail, FlightNode** destinationHead, FlightNode** destinationTail) {
     char destination[DESTINATION_SIZE] = "";
     char date[DATE_SIZE] = "";
     float fare = 0;
-    int status = SUCCESS;
+    int status = 0;
     int done = 0;
 
     while (done == 0) {
         printf("Enter the destination (. to stop): ");
-        if (getValidString(destination, sizeof(destination)) == FAILURE || strcmp(destination, STOP_INPUT) == 0) {
+        if (getValidString(destination, sizeof(destination)) == -1 || strcmp(destination, STOP_INPUT) == 0) {
             done = 1;
         }
         else {
             printf("Enter the date as DDMMYYYY (. to stop): ");
-            if (getValidString(date, sizeof(date)) == FAILURE || strcmp(date, STOP_INPUT) == 0) {
+            if (getValidString(date, sizeof(date)) == -1 || strcmp(date, STOP_INPUT) == 0) {
                 done = 1;
             }
             else {
                 printf("Enter the fare: ");
-                if (getFare(&fare) == FAILURE) {
+                if (getFare(&fare) == -1) {
                     done = 1;
                 }
                 //add the flight to both lists
-                else if (insertSortedByFare(fareHead, fareTail, destination, date, fare) == FAILURE ||
-                    insertSortedByDestination(destinationHead, destinationTail, destination, date, fare) == FAILURE) {
-                    status = FAILURE;
+                else if (insertSortedByFare(fareHead, fareTail, destination, date, fare) == -1 ||
+                    insertSortedByDestination(destinationHead, destinationTail, destination, date, fare) == -1) {
+                    status = -1;
                     done = 1;
                 }
             }
@@ -409,8 +388,9 @@ int getFlights(FlightNode** fareHead, FlightNode** fareTail, FlightNode** destin
     return status;
 }
 
+
 //
-// FUNCTION    : printList
+// FUNCTION    : PrintList
 // DESCRIPTION :
 //   This function prints the destination, date and fare of every flight
 //   within the linked list, one flight per line.
@@ -419,13 +399,14 @@ int getFlights(FlightNode** fareHead, FlightNode** fareTail, FlightNode** destin
 // RETURNS     :
 //   none
 //
-void printList(FlightNode* head) {
+void PrintList(FlightNode* head) {
     FlightNode* current = head;
     while (current != NULL) {
         printf("%-15s%-10s%-.2f\n", current->Flight.Destination, current->Flight.Date, current->Flight.Fare);
         current = current->NextFlight;
     }
 }
+
 
 //
 // FUNCTION    : findFlight
@@ -492,6 +473,8 @@ void deleteNode(FlightNode* node, FlightNode** head, FlightNode** tail) {
     free(node->Flight.Date);
     free(node);
 }
+
+
 //
 // FUNCTION    : changeFare
 // DESCRIPTION :
@@ -505,12 +488,12 @@ void deleteNode(FlightNode* node, FlightNode** head, FlightNode** tail) {
 //   FlightNode** fareTail       : pointer to tail of the list sorted by fare
 //   FlightNode* destinationHead : head of the list sorted by destination
 // RETURNS     :
-//   int : SUCCESS normally, FAILURE if there is no memory
+//   int : 0 normally, -1 if there is no memory
 //
 int changeFare(FlightNode** fareHead, FlightNode** fareTail, FlightNode* destinationHead) {
     char destination[DESTINATION_SIZE] = "";
     char date[DATE_SIZE] = "";
-    int status = SUCCESS;
+    int status = 0;
 
     printf("Enter the destination of the flight to search for: ");
     getString(destination, sizeof(destination));
@@ -528,7 +511,7 @@ int changeFare(FlightNode** fareHead, FlightNode** fareTail, FlightNode* destina
         printf("Fare: %.2f\n", found->Flight.Fare);
         printf("Enter the new fare: ");
 
-        if (getFare(&newFare) == FAILURE || newFare == found->Flight.Fare) {
+        if (getFare(&newFare) == -1 || newFare == found->Flight.Fare) {
             printf("Fare is unchanged\n");
         }
         else {
@@ -545,7 +528,7 @@ int changeFare(FlightNode** fareHead, FlightNode** fareTail, FlightNode* destina
 
 
 //
-// FUNCTION    : freeList
+// FUNCTION    : FreeList
 // DESCRIPTION :
 //   This function iterates over the entire list and frees up the memory
 //   space. After it is done the list is empty.
@@ -555,7 +538,7 @@ int changeFare(FlightNode** fareHead, FlightNode** fareTail, FlightNode* destina
 // RETURNS     :
 //   none
 //
-void freeList(FlightNode** head, FlightNode** tail) {
+void FreeList(FlightNode** head, FlightNode** tail) {
     while (*head != NULL) {
         deleteNode(*head, head, tail);
     }
@@ -574,23 +557,23 @@ int main(void) {
     //1. Get all the flights and add them to both lists
     int status = getFlights(&fareHead, &fareTail, &destinationHead, &destinationTail);
 
-    if (status == SUCCESS) {
+    if (status == 0) {
         //2. Print both lists
-        printList(fareHead);
-        printList(destinationHead);
+        PrintList(fareHead);
+        PrintList(destinationHead);
 
         //3. Search for one flight and change its fare
         status = changeFare(&fareHead, &fareTail, destinationHead);
     }
 
-    if (status == SUCCESS) {
+    if (status == 0) {
         //4. Print both lists again
-        printList(fareHead);
-        printList(destinationHead);
+        PrintList(fareHead);
+        PrintList(destinationHead);
     }
 
     //5. CLEAR OUT BOTH LISTS
-    freeList(&fareHead, &fareTail);
-    freeList(&destinationHead, &destinationTail);
+    FreeList(&fareHead, &fareTail);
+    FreeList(&destinationHead, &destinationTail);
     return status;
 }
