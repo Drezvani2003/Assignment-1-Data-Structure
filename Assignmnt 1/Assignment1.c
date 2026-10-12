@@ -492,4 +492,105 @@ void deleteNode(FlightNode* node, FlightNode** head, FlightNode** tail) {
     free(node->Flight.Date);
     free(node);
 }
+//
+// FUNCTION    : changeFare
+// DESCRIPTION :
+//   This function reads a destination and a date from stdin and searches for
+//   that flight in the list sorted by destination. If the flight is found it
+//   prints the fare and asks for a new fare. If the fare is changed, the list
+//   sorted by destination is updated, and the flight is deleted from the list
+//   sorted by fare and inserted again based on the new fare.
+// PARAMETERS  :
+//   FlightNode** fareHead       : pointer to head of the list sorted by fare
+//   FlightNode** fareTail       : pointer to tail of the list sorted by fare
+//   FlightNode* destinationHead : head of the list sorted by destination
+// RETURNS     :
+//   int : SUCCESS normally, FAILURE if there is no memory
+//
+int changeFare(FlightNode** fareHead, FlightNode** fareTail, FlightNode* destinationHead) {
+    char destination[DESTINATION_SIZE] = "";
+    char date[DATE_SIZE] = "";
+    int status = SUCCESS;
 
+    printf("Enter the destination of the flight to search for: ");
+    getString(destination, sizeof(destination));
+    printf("Enter the date of the flight to search for (DDMMYYYY): ");
+    getString(date, sizeof(date));
+
+    FlightNode* found = findFlight(destinationHead, destination, date);
+
+    if (found == NULL) {
+        printf("Flight Not Found!\n");
+    }
+    else {
+        float newFare = found->Flight.Fare;
+
+        printf("Fare: %.2f\n", found->Flight.Fare);
+        printf("Enter the new fare: ");
+
+        if (getFare(&newFare) == FAILURE || newFare == found->Flight.Fare) {
+            printf("Fare is unchanged\n");
+        }
+        else {
+            //update the list sorted by destination
+            found->Flight.Fare = newFare;
+
+            //delete from the list sorted by fare and insert again at the new place
+            deleteNode(findFlight(*fareHead, destination, date), fareHead, fareTail);
+            status = insertSortedByFare(fareHead, fareTail, destination, date, newFare);
+        }
+    }
+    return status;
+}
+
+
+//
+// FUNCTION    : freeList
+// DESCRIPTION :
+//   This function iterates over the entire list and frees up the memory
+//   space. After it is done the list is empty.
+// PARAMETERS  :
+//   FlightNode** head : pointer to head of list
+//   FlightNode** tail : pointer to tail of list
+// RETURNS     :
+//   none
+//
+void freeList(FlightNode** head, FlightNode** tail) {
+    while (*head != NULL) {
+        deleteNode(*head, head, tail);
+    }
+}
+
+
+int main(void) {
+    //list sorted by fare, at first it is empty
+    FlightNode* fareHead = NULL;
+    FlightNode* fareTail = NULL;
+
+    //list sorted by destination, at first it is empty
+    FlightNode* destinationHead = NULL;
+    FlightNode* destinationTail = NULL;
+
+    //1. Get all the flights and add them to both lists
+    int status = getFlights(&fareHead, &fareTail, &destinationHead, &destinationTail);
+
+    if (status == SUCCESS) {
+        //2. Print both lists
+        printList(fareHead);
+        printList(destinationHead);
+
+        //3. Search for one flight and change its fare
+        status = changeFare(&fareHead, &fareTail, destinationHead);
+    }
+
+    if (status == SUCCESS) {
+        //4. Print both lists again
+        printList(fareHead);
+        printList(destinationHead);
+    }
+
+    //5. CLEAR OUT BOTH LISTS
+    freeList(&fareHead, &fareTail);
+    freeList(&destinationHead, &destinationTail);
+    return status;
+}
